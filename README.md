@@ -2,7 +2,7 @@
 
 Application de bureau pour gérer une liste d'étudiants : ajout, modification, suppression, recherche et statistiques. L'interface est réalisée avec CustomTkinter.
 
-![Page d'accueil de l'application](images/accueil.png)
+![Page d'accueil de l'application](image/Acceuil.png)
 
 ## Fonctionnalités
 
