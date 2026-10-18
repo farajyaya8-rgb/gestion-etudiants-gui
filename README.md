@@ -45,3 +45,11 @@ python main.py
 ## Technologies
 
 Python, CustomTkinter, matplotlib, SQLite
+
+
+## Tests
+
+Les classes `Etudiant` et `GestionnaireEtudiants` sont testées avec pytest :
+
+    pip install pytest
+    pytest
