@@ -1,5 +1,6 @@
 import json
 import os
+import sqlite3
 from etudiant import Etudiant
 
 DOSSIER = os.path.dirname(os.path.abspath(__file__))
@@ -14,43 +15,71 @@ def cle_note(etudiant):
 
 
 class GestionnaireEtudiants:
-    def __init__(self, fichier="etudiants.json"):
-        self.fichier = os.path.join(DOSSIER, fichier)
+    def __init__(self, fichier_db="etudiants.db"):
+        self.fichier_json = os.path.join(DOSSIER, "etudiants.json")
+        self.connexion = sqlite3.connect(os.path.join(DOSSIER, fichier_db))
         self.etudiants = []
+        self.creer_table()
+        self.migrer_json()
 
-    # ----- Fichier JSON -----
-    def sauvegarder(self):
-        donnees = []
-        for etudiant in self.etudiants:
-            donnees.append(etudiant.en_dictionnaire())
-        with open(self.fichier, "w", encoding="utf-8") as fichier:
-            json.dump(donnees, fichier, indent=4, ensure_ascii=False)
+    # ----- Base de données -----
+    def creer_table(self):
+        self.connexion.execute("""
+            CREATE TABLE IF NOT EXISTS etudiants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nom TEXT NOT NULL,
+                age INTEGER NOT NULL,
+                note REAL NOT NULL
+            )
+        """)
+        self.connexion.commit()
+
+    def migrer_json(self):
+        """Importe l'ancien fichier JSON une seule fois, si la base est vide."""
+        nombre = self.connexion.execute("SELECT COUNT(*) FROM etudiants").fetchone()[0]
+        if nombre > 0 or not os.path.exists(self.fichier_json):
+            return
+
+        with open(self.fichier_json, "r", encoding="utf-8") as fichier:
+            donnees = json.load(fichier)
+
+        for d in donnees:
+            self.connexion.execute(
+                "INSERT INTO etudiants (nom, age, note) VALUES (?, ?, ?)",
+                (d["nom"], d["age"], d["note"])
+            )
+        self.connexion.commit()
 
     def charger(self):
-        try:
-            with open(self.fichier, "r", encoding="utf-8") as fichier:
-                donnees = json.load(fichier)
-        except FileNotFoundError:
-            donnees = []
-
+        curseur = self.connexion.execute("SELECT id, nom, age, note FROM etudiants")
         self.etudiants = []
-        for d in donnees:
-            self.etudiants.append(Etudiant.depuis_dictionnaire(d))
+        for ligne in curseur.fetchall():
+            self.etudiants.append(Etudiant(ligne[1], ligne[2], ligne[3], ligne[0]))
 
     # ----- Gestion de la liste -----
     def ajouter(self, etudiant):
+        curseur = self.connexion.execute(
+            "INSERT INTO etudiants (nom, age, note) VALUES (?, ?, ?)",
+            (etudiant.nom, etudiant.age, etudiant.note)
+        )
+        self.connexion.commit()
+        etudiant.id = curseur.lastrowid
         self.etudiants.append(etudiant)
-        self.sauvegarder()
 
     def supprimer(self, etudiant):
+        self.connexion.execute("DELETE FROM etudiants WHERE id = ?", (etudiant.id,))
+        self.connexion.commit()
         self.etudiants.remove(etudiant)
-        self.sauvegarder()
 
     def modifier(self, etudiant, nom, age, note):
+        self.connexion.execute(
+            "UPDATE etudiants SET nom = ?, age = ?, note = ? WHERE id = ?",
+            (nom, age, note, etudiant.id)
+        )
+        self.connexion.commit()
         etudiant.nom = nom
         etudiant.age = age
         etudiant.note = note
-        self.sauvegarder()
 
     def nom_existe(self, nom, ignorer=None):
         """True si un autre étudiant porte déjà ce nom."""

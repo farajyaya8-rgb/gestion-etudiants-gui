@@ -1,8 +1,9 @@
 class Etudiant:
-    def __init__(self, nom, age, note):
+    def __init__(self, nom, age, note, id_etudiant=None):
         self.nom = nom
         self.age = age
         self.note = note
+        self.id = id_etudiant
 
     def est_admis(self):
         return self.note >= 10

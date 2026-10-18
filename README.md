@@ -12,7 +12,7 @@ Application de bureau pour gérer une liste d'étudiants : ajout, modification, 
 - Tri (A-Z ou meilleures notes) et filtres (admis, ajournés)
 - Tableau de bord avec statistiques, graphiques et top 3
 - Mode clair et mode sombre
-- Sauvegarde automatique dans un fichier JSON
+- Sauvegarde dans une base de données SQLite
 
 ## Installation
 
@@ -35,3 +35,13 @@ pip install -r requirements.txt
 ```
 python main.py
 ```
+
+## Structure du projet
+
+- `main.py` : l'interface graphique (classe `Application`)
+- `etudiant.py` : la classe `Etudiant`
+- `gestionnaire.py` : la classe `GestionnaireEtudiants` (base SQLite, recherche, tri, statistiques)
+
+## Technologies
+
+Python, CustomTkinter, matplotlib, SQLite
